@@ -24,7 +24,6 @@
 
 #if FILEWATCHER_PLATFORM == FILEWATCHER_PLATFORM_WIN32
 
-#define _WIN32_WINNT 0x0550
 #include <windows.h>
 
 #ifdef WIN_USE_WSTR
@@ -33,21 +32,16 @@ typedef std::wstring WAPI_STR;
 typedef std::string WAPI_STR;
 #endif
 
-WAPI_STR to_w_str(const std::string& str)
+static std::wstring to_w_str(const std::string& str)
 {
-#ifdef WIN_USE_WSTR
-	WAPI_STR ret(str.length(), '0');
-	
-	for (size_t i = 0; i < str.length(); ++i)
-		ret[i] = str[i];
-
-	return ret;
-#else
-	return str;
-#endif
+	const auto srcSize = static_cast<int>(str.size());
+	const auto sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, &str[0], srcSize, nullptr, 0);
+	std::wstring wstrTo(sizeNeeded, 0);
+	MultiByteToWideChar(CP_UTF8, 0, &str[0], srcSize, &wstrTo[0], sizeNeeded);
+	return wstrTo;
 }
 
-std::string to_str(const WAPI_STR& str)
+static std::string to_str(const WAPI_STR& str)
 {
 #ifdef WIN_USE_WSTR
 	std::string ret(str.length(), '0');
@@ -126,7 +120,8 @@ namespace FW
 				}
 #			endif
 
-				pWatch->mFileWatcher->handleAction(pWatch, to_str(szFile).c_str(), pNotify->Action);
+				if (!pWatch->mStopNow)
+					pWatch->mFileWatcher->handleAction(pWatch, to_str(szFile).c_str(), pNotify->Action);
 
 			} while (pNotify->NextEntryOffset != 0);
 		}
@@ -169,13 +164,14 @@ namespace FW
 	}
 
 	/// Starts monitoring a directory.
-	WatchStruct* CreateWatch(LPCTSTR szDirectory, bool recursive, DWORD mNotifyFilter)
+	WatchStruct* CreateWatch(const String& szDirectory, bool recursive, DWORD mNotifyFilter)
 	{
 		WatchStruct* pWatch;
 		size_t ptrsize = sizeof(*pWatch);
 		pWatch = static_cast<WatchStruct*>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, ptrsize));
 
-		pWatch->mDirHandle = CreateFile(szDirectory, FILE_LIST_DIRECTORY,
+		std::wstring wszDirectory = to_w_str(szDirectory);
+		pWatch->mDirHandle = CreateFileW(wszDirectory.c_str(), FILE_LIST_DIRECTORY,
 			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, 
 			OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
 
@@ -225,7 +221,7 @@ namespace FW
 	{
 		WatchID watchid = ++mLastWatchID;
 
-		WatchStruct* watch = CreateWatch(to_w_str(directory).c_str(), recursive,
+		WatchStruct* watch = CreateWatch(directory.c_str(), recursive,
 			FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_FILE_NAME);
 
 		if(!watch)
