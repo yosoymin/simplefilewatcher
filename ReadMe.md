@@ -1,13 +1,13 @@
--- FileWatcher --
+# FileWatcher
 
-Description:
+## Description
 
 FileWatcher is a C++ wrapper for OS file monitoring systems. Currently
 it uses Win32 ReadDirectoryChangesW for monitoring changes in Windows,
 and inotify in linux. OSX is supported via kqueue and directory scans.
 
 
-TODO:
+## TODO
 
  * Create a pure directory scan based fallback mode.
  * Optimize the kqueue implementation.
@@ -15,14 +15,12 @@ TODO:
  * Add proper Unicode support.
 
 
-Compiling:
+## Compiling
 
-Build scripts for Visual Studio 2005, Visual Studio 2008, and GNU Make
-can be found within the build directory, or can be regenerated using
-premake 4.0.
+Use premake5 to generate a project for your build system.
 
 
-SimpleDemo:
+## SimpleDemo
 
 To run the demo, create a directory relative to the execution directory
 called "test". Start SimpleDemo, then create/change/delete files inside
@@ -30,12 +28,12 @@ called "test". Start SimpleDemo, then create/change/delete files inside
 an exception and exit.
 
 
-OgreDemo:
+## OgreDemo
 
 Check the OgreDemo directory for an example integration with Ogre.
 
 
-Caveats:
+## Caveats
 
 When some programs write data in Win32, they will generate both an Add,
 and a Modify event. This is likely because the program is actually using
@@ -46,9 +44,12 @@ necessary in some cases to wait a few milliseconds after the event to be
 able to safely access the file's contents.
 
 
-------------------------------
-Written by James Wynn
+## Credits
+Originally written by James Wynn
 Contact: james@jameswynn.com
 
-The most recent version can be located at:
+Fixes and Buffered/AsyncFileWatcher by Ian Diaz
+Contact: shadowndacorner@gmail.com
+
+James Wynn's original code can be located at:
 https://github.com/jameswynn/simplefilewatcher

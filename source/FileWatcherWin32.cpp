@@ -27,6 +27,40 @@
 #define _WIN32_WINNT 0x0550
 #include <windows.h>
 
+#ifdef WIN_USE_WSTR
+typedef std::wstring WAPI_STR;
+#else
+typedef std::string WAPI_STR;
+#endif
+
+WAPI_STR to_w_str(const std::string& str)
+{
+#ifdef WIN_USE_WSTR
+	WAPI_STR ret(str.length(), '0');
+	
+	for (size_t i = 0; i < str.length(); ++i)
+		ret[i] = str[i];
+
+	return ret;
+#else
+	return str;
+#endif
+}
+
+std::string to_str(const WAPI_STR& str)
+{
+#ifdef WIN_USE_WSTR
+	std::string ret(str.length(), '0');
+
+	for (size_t i = 0; i < str.length(); ++i)
+		ret[i] = (char)str[i];
+
+	return ret;
+#else
+	return str;
+#endif
+}
+
 #if defined(_MSC_VER)
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "user32.lib")
@@ -63,6 +97,7 @@ namespace FW
 	void CALLBACK WatchCallback(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped)
 	{
 		TCHAR szFile[MAX_PATH];
+		
 		PFILE_NOTIFY_INFORMATION pNotify;
 		WatchStruct* pWatch = (WatchStruct*) lpOverlapped;
 		size_t offset = 0;
@@ -91,7 +126,7 @@ namespace FW
 				}
 #			endif
 
-				pWatch->mFileWatcher->handleAction(pWatch, szFile, pNotify->Action);
+				pWatch->mFileWatcher->handleAction(pWatch, to_str(szFile).c_str(), pNotify->Action);
 
 			} while (pNotify->NextEntryOffset != 0);
 		}
@@ -190,7 +225,7 @@ namespace FW
 	{
 		WatchID watchid = ++mLastWatchID;
 
-		WatchStruct* watch = CreateWatch(directory.c_str(), recursive,
+		WatchStruct* watch = CreateWatch(to_w_str(directory).c_str(), recursive,
 			FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SIZE | FILE_NOTIFY_CHANGE_FILE_NAME);
 
 		if(!watch)
@@ -246,7 +281,6 @@ namespace FW
 	void FileWatcherWin32::handleAction(WatchStruct* watch, const String& filename, unsigned long action)
 	{
 		Action fwAction;
-
 		switch(action)
 		{
 		case FILE_ACTION_RENAMED_NEW_NAME:
@@ -258,6 +292,7 @@ namespace FW
 			fwAction = Actions::Delete;
 			break;
 		case FILE_ACTION_MODIFIED:
+		default:
 			fwAction = Actions::Modified;
 			break;
 		};
