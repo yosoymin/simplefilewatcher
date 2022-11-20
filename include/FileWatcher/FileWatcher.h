@@ -234,6 +234,6 @@ namespace FW
 
 	};//class FileWatchListener
 
-};//namespace FW
+}	//namespace FW
 
 #endif//_FW_FILEWATCHER_H_
