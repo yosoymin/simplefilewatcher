@@ -43,7 +43,7 @@ namespace FW
 	{
 		WatchID mWatchID;
 		String mDirName;
-		FileWatchListener* mListener;		
+		FileWatchListener* mListener;
 	};
 
 	//--------
@@ -180,6 +180,6 @@ namespace FW
 		}
 	}
 
-};//namespace FW
+}	//namespace FW
 
 #endif//FILEWATCHER_PLATFORM_LINUX
